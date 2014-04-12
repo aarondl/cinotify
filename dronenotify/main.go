@@ -25,6 +25,13 @@ import (
 )
 
 func main() {
+	addr := os.Getenv("DRONE_NOTIFY_ADDRESS")
+
+	if len(addr) == 0 {
+		log.Printf("DRONE_NOTIFY_ADDRESS not set, silently failing.")
+		return
+	}
+
 	dr := cinotify.DroneRequest{
 		RepoSlug:    os.Getenv("DRONE_REPO_SLUG"),
 		BuildUrl:    os.Getenv("DRONE_BUILD_URL"),
@@ -42,7 +49,7 @@ func main() {
 		log.Fatalf("dronenotify: Failed to encode json %v", err)
 	}
 
-	addr := "http://" + os.Getenv("DRONE_NOTIFY_ADDRESS") + "/"
+	addr := "http://" + addr + "/"
 	req, err := http.NewRequest("POST", addr, buffer)
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
