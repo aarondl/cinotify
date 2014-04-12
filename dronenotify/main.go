@@ -49,7 +49,7 @@ func main() {
 		log.Fatalf("dronenotify: Failed to encode json %v", err)
 	}
 
-	addr := "http://" + addr + "/"
+	addr = "http://" + addr + "/"
 	req, err := http.NewRequest("POST", addr, buffer)
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
