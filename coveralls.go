@@ -25,19 +25,10 @@ type CoverallsRequest struct {
 
 // String converts a coverallsRequest to a tidy string for human consumption.
 func (cr CoverallsRequest) String() string {
-	change := ""
-	if cr.CoverageChange == 1.0 {
-		change += "none"
-	} else if cr.CoverageChange > 1.0 {
-		change = fmt.Sprintf("+%.0f%%", (cr.CoverageChange-1.0)*100.0)
-	} else {
-		change = fmt.Sprintf("-%v%%", (1.0-cr.CoverageChange)*100.0)
-	}
-
 	return fmt.Sprintf(
-		"Coveralls[%s]: Change(%s) Percent(%.2f) %s",
+		"Coveralls[%s]: Change(%.2f%%) Percent(%.2f%%) %s",
 		cr.RepoName,
-		change,
+		cr.CoverageChange,
 		cr.CoveredPercent,
 		cr.Url,
 	)
