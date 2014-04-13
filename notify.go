@@ -16,8 +16,8 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"sync"
 	"strconv"
+	"sync"
 )
 
 // Service represents a CI service.
@@ -46,7 +46,7 @@ type (
 
 // The lists of callbacks
 var (
-	droneCallbacks = make([]DroneCallback, 0)
+	droneCallbacks     = make([]DroneCallback, 0)
 	coverallsCallbacks = make([]CoverallsCallback, 0)
 )
 
