@@ -18,7 +18,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/aarondl/cinotify"
+	"github.com/aarondl/cinotify/drone"
 	"log"
 	"net/http"
 	"os"
@@ -32,7 +32,7 @@ func main() {
 		return
 	}
 
-	dr := cinotify.DroneRequest{
+	dr := drone.Notification{
 		RepoSlug:    os.Getenv("DRONE_REPO_SLUG"),
 		BuildUrl:    os.Getenv("DRONE_BUILD_URL"),
 		BuildDir:    os.Getenv("DRONE_BUILD_DIR"),
@@ -52,6 +52,7 @@ func main() {
 	addr = "http://" + addr + "/"
 	req, err := http.NewRequest("POST", addr, buffer)
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("User-Agent", "dronenotify")
 	if err != nil {
 		log.Fatalf("dronenotify: Failed to create request %v", err)
 	}

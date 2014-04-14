@@ -3,7 +3,6 @@ package cinotify
 import (
 	"fmt"
 	"github.com/gorilla/schema"
-	"net/http"
 )
 
 // decoder helps decode all the post form requests
@@ -35,7 +34,7 @@ func (cr CoverallsRequest) String() string {
 }
 
 // coverallsHandler handles any requests from coveralls.
-func coverallsHandler(w http.ResponseWriter, r *http.Request) {
+/*func coverallsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	err := r.ParseForm()
@@ -52,4 +51,4 @@ func coverallsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dispatchCoverallsCallbacks(&cr)
-}
+}*/
