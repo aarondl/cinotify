@@ -1,8 +1,33 @@
 /*
-Package cinotify is a library that can listen for HTTP a webhook
+Package cinotify is a library that can listen for an HTTP webhook
 from a cloud service. It then delivers those HTTP requests to the appropriate
 extension for processing, and then on to any clients registered to deal with
 those notifications.
+
+A quick usage example would be:
+
+	import (
+		"github.com/aarondl/cinotify
+		_ "github.com/aarondl/cinotify/drone
+	)
+
+	func main() {
+		// Set logger
+		cinotify.Logger = log.New(os.Stdout, "", log.LstdFlags)
+
+		// Add any callbacks we need.
+		cinotify.ToFunc(func(name string, notification fmt.Stringer) {
+			log.Println(notification)
+			// OR remove the _ from in front of drone's import and do:
+			if droneNotification, ok := notification.(drone.Notification); ok {
+				// Here we can access all the fields of the drone.Request struct
+			}
+		})
+
+		// Start server.
+		ch := cinotify.StartServer(5000)
+		log.Println(<-ch)
+	}
 */
 package cinotify
 
@@ -15,15 +40,15 @@ import (
 
 // Handler is capable of handling a webhook from a given service.
 type Handler interface {
-	// Route is called before webserver starts add criteria to a route that will
-	// be able to uniquely route this request to this notifier. Try and use
-	// additional headers and user agent to differentiate against other
-	// notifiers.
+	// Route is called before the webserver starts so we can add criteria
+	// to a route that will be able to uniquely route a request to this
+	// Handler. Try and use additional headers and user agent to differentiate
+	// from other Handlers.
 	//
-	// Make sure you use at least route.Path("/") in your criteria.
+	// Make sure you use at least route.Path() in your criteria.
 	Route(*mux.Route)
 
-	// Handle takes a request and transforms it into a Notifier.
+	// Handle takes a request and transforms it into a fmt.Stringer.
 	Handle(r *http.Request) fmt.Stringer
 }
 
@@ -56,10 +81,8 @@ type Notifier interface {
 	Notify(name string, notification fmt.Stringer)
 }
 
-// NotifyFunc is called when a notification has been received. name will contain
-// the name of the extension that was called, and the notification will
-// be a fmt.Stringer you can type assert into whatever extension's custom
-// types.
+// NotifyFunc is the function version of the Notifier interface, see docs
+// for Notifier.Notify.
 type NotifyFunc func(name string, notification fmt.Stringer)
 
 // To is used to direct notifications to a Notifier.
@@ -101,9 +124,9 @@ func (c context) ToFunc(n NotifyFunc) {
 	}
 }
 
-// When is a matcher for an extension name, use it in front of a to call to
+// When is a matcher for an extension name, use it in front of a To() call to
 // limit which notifications your Notifier/NotifyFunc will get.
-// Example: When("github").To(myHandler)
+// Example: When(drone.Name).To(myHandler)
 func When(name string) context {
 	return context{name}
 }
@@ -139,7 +162,8 @@ func dispatch(notification fmt.Stringer) {
 	}
 }
 
-// StartServer starts listening on the given port, if 0 will default to 5000.
+// StartServer starts listening on the given port. Returns a channel that
+// can be listened on for any errors from the web server.
 func StartServer(port uint16) <-chan error {
 	address := ":" + strconv.Itoa(int(port))
 

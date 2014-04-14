@@ -1,3 +1,5 @@
+// Package drone is an extension for the cinotify package. See
+// github.com/aarondl/cinotify for details.
 package drone
 
 import (

@@ -3,15 +3,15 @@ Package dronenotify is an executeable that reads the environment variables
 and sends an HTTP POST with a JSON payload to a cinotify server.
 
 This variable is required for the bot to connect to an endpoint and must be set.
-DRONE_NOTIFY_ADDRESS - eg localhost:3333
+	DRONE_NOTIFY_ADDRESS - eg localhost:3333
 
 The variables it reads and json-ify's are as follows:
-DRONE_REPO_SLUG
-DRONE_BUILD_URL
-DRONE_BUILD_DIR
-DRONE_BUILD_NUMBER
-DRONE_COMMIT
-DRONE_BRANCH
+	DRONE_REPO_SLUG
+	DRONE_BUILD_URL
+	DRONE_BUILD_DIR
+	DRONE_BUILD_NUMBER
+	DRONE_COMMIT
+	DRONE_BRANCH
 */
 package main
 

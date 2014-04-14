@@ -7,13 +7,13 @@ web hooks.
 A good example (see code below) is if you wanted to know whenever drone.io
 kicked off a build. You could display the link, build number etc.
 
-Note that it's built modularily similar to the sql/db package in the Go standard
-library. That's to say: to enable a driver, import it with the _ identifier
+Note that it's built extensibly similar to the sql/db package in the Go standard
+library. That's to say: to enable an extension, import it with the _ identifier
 (unless you plan on using the notification struct directly.)
 
-###Drivers
+###Extensions
 
-| Driver       | Import Path |
+| Extension    | Import Path |
 | ------------ | ----------- |
 | drone.io     | [github.com/aarondl/cinotify/drone](https://github.com/aarondl/cinotify/drone) |
 | coveralls.io | [github.com/aarondl/cinotify/coveralls](https://github.com/aarondl/cinotify/coveralls) |
