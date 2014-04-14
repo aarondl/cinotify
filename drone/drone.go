@@ -8,8 +8,11 @@ import (
 	"net/http"
 )
 
+// Name is the name of the service, for use with the When() in cinotify.
+const Name = "drone"
+
 func init() {
-	cinotify.Register("drone", droneHandler{})
+	cinotify.Register(Name, droneHandler{})
 }
 
 // Notification is the fields transmitted from a dronenotify request.
