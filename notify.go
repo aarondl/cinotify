@@ -7,8 +7,8 @@ those notifications.
 A quick usage example would be:
 
 	import (
-		"github.com/aarondl/cinotify
-		_ "github.com/aarondl/cinotify/drone
+		"github.com/aarondl/cinotify"
+		_ "github.com/aarondl/cinotify/drone"
 	)
 
 	func main() {
