@@ -10,14 +10,14 @@ import (
 	"net/http"
 )
 
-// Name is the name of the service, for use with the When() in cinotify.
+// Name is the name of the service, for use with When() in cinotify.
 const Name = "drone"
 
 func init() {
 	cinotify.Register(Name, droneHandler{})
 }
 
-// Notification is the fields transmitted from a dronenotify request.
+// Notification is the notification transmitted from a dronenotify request.
 type Notification struct {
 	RepoSlug    string `json:"repo_slug"`
 	BuildUrl    string `json:"build_url"`

@@ -1,15 +1,28 @@
-package cinotify
+// Package coveralls is an extension for the cinotify package. See
+// github.com/aarondl/cinotify for details.
+package coveralls
 
 import (
 	"fmt"
+	"net/http"
+
+	"github.com/aarondl/cinotify"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 )
+
+// Name is the name of the service, for use with When() in cinotify.
+const Name = "coveralls"
+
+func init() {
+	cinotify.Register(Name, coverallsHandler{})
+}
 
 // decoder helps decode all the post form requests
 var decoder = schema.NewDecoder()
 
-// CoverallsRequest is the fields passed back from the coveralls webhook.
-type CoverallsRequest struct {
+// Notification is the notification that arrives from a coveralls webhook.
+type Notification struct {
 	BadgeUrl       string  `schema:"badge_url"`
 	Branch         string  `schema:"branch"`
 	CommitMessage  string  `schema:"commit_message"`
@@ -22,33 +35,45 @@ type CoverallsRequest struct {
 	Url            string  `schema:"url"`
 }
 
-// String converts a coverallsRequest to a tidy string for human consumption.
-func (cr CoverallsRequest) String() string {
+// String converts a Notification to a tidy string for human consumption.
+func (n Notification) String() string {
 	return fmt.Sprintf(
-		"Coveralls[%s]: Change(%.2f%%) Percent(%.2f%%) %s",
-		cr.RepoName,
-		cr.CoverageChange,
-		cr.CoveredPercent,
-		cr.Url,
+		"Coveralls[%s]: Change(%.2f%%) Covered(%.2f%%) %s",
+		n.RepoName,
+		n.CoverageChange,
+		n.CoveredPercent,
+		n.Url,
 	)
 }
 
+// coverallsHandler implements cinotify.Handler
+type coverallsHandler struct {
+}
+
 // coverallsHandler handles any requests from coveralls.
-/*func coverallsHandler(w http.ResponseWriter, r *http.Request) {
+func (_ coverallsHandler) Handle(r *http.Request) fmt.Stringer {
 	defer r.Body.Close()
 
 	err := r.ParseForm()
 	if err != nil {
-		doLogf("cinotify: Failed to parse form body: %v", err)
-		return
+		cinotify.DoLogf("cinotify/coveralls: Failed to parse form: %v", err)
+		return nil
 	}
 
-	var cr CoverallsRequest
-	err = decoder.Decode(&cr, r.PostForm)
+	var n Notification
+	err = decoder.Decode(&n, r.PostForm)
 	if err != nil {
-		doLogf("cinotify: Failed to decode post form: %v", err)
-		return
+		cinotify.DoLogf("cinotify/coveralls: Failed to decode form: %v", err)
+		return nil
 	}
 
-	dispatchCoverallsCallbacks(&cr)
-}*/
+	return n
+}
+
+// Route creates a route that only a dronenotify client should hit.
+func (_ coverallsHandler) Route(r *mux.Route) {
+	r.Path("/").Methods("POST").Headers(
+		"Content-Type", "application/x-www-form-urlencoded",
+		"User-Agent", "Ruby",
+	)
+}
