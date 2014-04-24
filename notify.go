@@ -136,8 +136,10 @@ func When(name string) context {
 func createRouter() *mux.Router {
 	router := mux.NewRouter()
 
-	for name, h := range handlers {
+	for outerName, outerHandler := range handlers {
 		r := router.NewRoute()
+		h := outerHandler // These guys are due to looping + closures
+		name := outerName
 		h.realHandler.Route(r)
 		r.Name(name)
 		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
