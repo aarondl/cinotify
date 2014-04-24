@@ -172,26 +172,36 @@ func TestCreateRouter(t *T) {
 func TestDispatch(t *T) {
 	handlers = make(map[string]*handler)
 	h1 := testHandler{}
+	h2 := testHandler{}
 	Register("test1", h1)
+	Register("test2", h2)
 
 	var n, s string
+	var count = 0
 	ToFunc(func(name string, notification fmt.Stringer) {
 		n, s = name, notification.String()
+		count++
 	})
 
 	router := createRouter()
 	if router.Get("test1").GetHandler() == nil {
-		t.Error("It should have hooked up the given route to a http handler.")
+		t.Error("It should have hooked up the given route to an http handler.")
+	}
+	if router.Get("test2").GetHandler() == nil {
+		t.Error("It should have hooked up the given route to an http handler.")
 	}
 
 	if len(n) > 0 || len(s) > 0 {
 		t.Error("Test set up is strange.")
 	}
-	dispatch(testNotification{})
+	dispatch("test1", testNotification{})
 	if n != "test1" {
 		t.Error("Expected name to be test1 but was: ", n)
 	}
 	if s != (testNotification{}.String()) {
 		t.Errorf("Expected s to be: %v, but got: %v", testNotification{}, s)
+	}
+	if 1 != count {
+		t.Errorf("Expected count to be: 1, but got: %v", count)
 	}
 }

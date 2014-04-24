@@ -142,7 +142,7 @@ func createRouter() *mux.Router {
 		r.Name(name)
 		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			notification := h.realHandler.Handle(r)
-			dispatch(notification)
+			dispatch(name, notification)
 		})
 	}
 
@@ -151,14 +151,13 @@ func createRouter() *mux.Router {
 
 // dispatch sends the notifications out to all appropriate Notifier and
 // NotifyFuncs.
-func dispatch(notification fmt.Stringer) {
-	for name, h := range handlers {
-		for _, notifier := range h.notifiers {
-			notifier.Notify(name, notification)
-		}
-		for _, notifyfunc := range h.notifyfuncs {
-			notifyfunc(name, notification)
-		}
+func dispatch(name string, notification fmt.Stringer) {
+	h := handlers[name]
+	for _, notifier := range h.notifiers {
+		notifier.Notify(name, notification)
+	}
+	for _, notifyfunc := range h.notifyfuncs {
+		notifyfunc(name, notification)
 	}
 }
 
