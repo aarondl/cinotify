@@ -17,6 +17,7 @@ library. That's to say: to enable an extension, import it with the _ identifier
 | ------------ | ----------- |
 | drone.io     | [github.com/aarondl/cinotify/drone](https://github.com/aarondl/cinotify/drone) |
 | coveralls.io | [github.com/aarondl/cinotify/coveralls](https://github.com/aarondl/cinotify/coveralls) |
+| github.com   | [github.com/knivey/gitbot](https://github.com/knivey/gitbot) |
 
 ###Installation
 
