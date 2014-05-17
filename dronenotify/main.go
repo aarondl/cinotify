@@ -18,10 +18,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/aarondl/cinotify/drone"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/aarondl/cinotify/drone"
 )
 
 func main() {

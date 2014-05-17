@@ -49,7 +49,7 @@ func main() {
 		log.Println(notification)
 		// OR remove the _ from in front of drone's import and do:
 		if droneNotification, ok := notification.(drone.Notification); ok {
-			// Here we can access all the fields of the drone.Request struct.
+			// Here we can access all the fields of the drone.Notification struct.
 		}
 	})
 

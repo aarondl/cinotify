@@ -3,10 +3,11 @@ package cinotify
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/httptest"
 	. "testing"
+
+	"github.com/gorilla/mux"
 )
 
 type testHandler struct {

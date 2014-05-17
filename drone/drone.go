@@ -5,9 +5,10 @@ package drone
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/aarondl/cinotify"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 // Name is the name of the service, for use with When() in cinotify.

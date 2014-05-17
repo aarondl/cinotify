@@ -3,12 +3,13 @@ package drone
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/aarondl/cinotify"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	. "testing"
+
+	"github.com/aarondl/cinotify"
+	"github.com/gorilla/mux"
 )
 
 var testNotification = Notification{
