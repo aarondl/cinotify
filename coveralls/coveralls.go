@@ -70,7 +70,7 @@ func (_ coverallsHandler) Handle(r *http.Request) fmt.Stringer {
 	return n
 }
 
-// Route creates a route that only a dronenotify client should hit.
+// Route creates a route that only a coveralls client should hit.
 func (_ coverallsHandler) Route(r *mux.Route) {
 	r.Path("/").Methods("POST").Headers(
 		"Content-Type", "application/x-www-form-urlencoded",
