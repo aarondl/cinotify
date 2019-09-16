@@ -9,11 +9,10 @@ import (
 	. "testing"
 
 	"github.com/aarondl/cinotify"
-	"github.com/gorilla/mux"
 )
 
 var testNotification = Notification{
-	BadgeUrl:       "badge_url",
+	BadgeURL:       "badge_url",
 	Branch:         "branch",
 	CommitMessage:  "commit_message",
 	CommitSha:      "commit_sha",
@@ -22,19 +21,18 @@ var testNotification = Notification{
 	CoverageChange: 1.5,
 	CoveredPercent: 97.0,
 	RepoName:       "repo_name",
-	Url:            "url",
+	URL:            "url",
 }
 
 func TestString(t *T) {
 	expect := "Coveralls[repo_name]: Change(1.50%) Covered(97.00%) url"
 
 	if got := testNotification.String(); got != expect {
-		t.Error("Expected: %s, got: %s", expect, got)
+		t.Errorf("Expected: %s, got: %s", expect, got)
 	}
 }
 
 func TestHandle(t *T) {
-	var err error
 	vals := url.Values{}
 	vals.Add("badge_url", "badge_url")
 	vals.Add("branch", "branch")
@@ -49,11 +47,9 @@ func TestHandle(t *T) {
 
 	buf := bytes.NewBufferString(vals.Encode())
 
-	var req *http.Request
-	if req, err = http.NewRequest("POST", "/", buf); err != nil {
-		t.Error("Error creating mock request: ", err)
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req := httptest.NewRequest(http.MethodPost, "/", buf)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "ruby")
 
 	d := coverallsHandler{}
 	note := d.Handle(req)
@@ -69,16 +65,14 @@ func TestHandle(t *T) {
 }
 
 func TestHandleFail(t *T) {
-	var err error
 	buf := bytes.NewBufferString("{!$@($*&@&$)(*$)*&@$)")
 	logger := &bytes.Buffer{}
 
 	cinotify.Logger = log.New(logger, "", log.LstdFlags)
 
-	var req *http.Request
-	if req, err = http.NewRequest("POST", "/", buf); err != nil {
-		t.Error("Error creating mock request: ", err)
-	}
+	req := httptest.NewRequest(http.MethodPost, "/", buf)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "ruby")
 
 	if 0 != logger.Len() {
 		t.Error("How could something be logged at this point?")
@@ -92,29 +86,5 @@ func TestHandleFail(t *T) {
 
 	if 0 == logger.Len() {
 		t.Error("Expected something to be written to the log.")
-	}
-}
-
-func TestRoute(t *T) {
-	var err error
-
-	d := coverallsHandler{}
-	router := mux.NewRouter()
-	r := router.NewRoute()
-
-	d.Route(r)
-	r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-
-	resp := httptest.NewRecorder()
-	var req *http.Request
-	if req, err = http.NewRequest("POST", "/", nil); err != nil {
-		t.Error("Error creating mock request: ", err)
-	}
-	req.Header.Add("User-Agent", "Ruby")
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	router.ServeHTTP(resp, req)
-	if resp.Code != http.StatusOK {
-		t.Error("Route did not match request.")
 	}
 }

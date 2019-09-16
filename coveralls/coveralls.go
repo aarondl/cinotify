@@ -5,10 +5,9 @@ package coveralls
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/aarondl/cinotify"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 )
 
 // Name is the name of the service, for use with When() in cinotify.
@@ -18,12 +17,9 @@ func init() {
 	cinotify.Register(Name, coverallsHandler{})
 }
 
-// decoder helps decode all the post form requests
-var decoder = schema.NewDecoder()
-
 // Notification is the notification that arrives from a coveralls webhook.
 type Notification struct {
-	BadgeUrl       string  `schema:"badge_url"`
+	BadgeURL       string  `schema:"badge_url"`
 	Branch         string  `schema:"branch"`
 	CommitMessage  string  `schema:"commit_message"`
 	CommitSha      string  `schema:"commit_sha"`
@@ -32,7 +28,7 @@ type Notification struct {
 	CoverageChange float64 `schema:"coverage_change"`
 	CoveredPercent float64 `schema:"covered_percent"`
 	RepoName       string  `schema:"repo_name"`
-	Url            string  `schema:"url"`
+	URL            string  `schema:"url"`
 }
 
 // String converts a Notification to a tidy string for human consumption.
@@ -42,7 +38,7 @@ func (n Notification) String() string {
 		n.RepoName,
 		n.CoverageChange,
 		n.CoveredPercent,
-		n.Url,
+		n.URL,
 	)
 }
 
@@ -51,8 +47,13 @@ type coverallsHandler struct {
 }
 
 // coverallsHandler handles any requests from coveralls.
-func (_ coverallsHandler) Handle(r *http.Request) fmt.Stringer {
-	defer r.Body.Close()
+func (coverallsHandler) Handle(r *http.Request) fmt.Stringer {
+	if r.URL.Path != "/" || r.Method != http.MethodPost {
+		return nil
+	}
+	if r.Header.Get("User-Agent") != "ruby" || r.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
+		return nil
+	}
 
 	err := r.ParseForm()
 	if err != nil {
@@ -60,20 +61,26 @@ func (_ coverallsHandler) Handle(r *http.Request) fmt.Stringer {
 		return nil
 	}
 
-	var n Notification
-	err = decoder.Decode(&n, r.PostForm)
-	if err != nil {
-		cinotify.DoLogf("cinotify/coveralls: Failed to decode form: %v", err)
+	n := Notification{
+		BadgeURL:       r.PostFormValue("badge_url"),
+		Branch:         r.PostFormValue("branch"),
+		CommitMessage:  r.PostFormValue("commit_message"),
+		CommitSha:      r.PostFormValue("commit_sha"),
+		CommitterEmail: r.PostFormValue("committer_email"),
+		CommitterName:  r.PostFormValue("committer_name"),
+		RepoName:       r.PostFormValue("repo_name"),
+		URL:            r.PostFormValue("url"),
+	}
+	coverageChange := r.PostFormValue("coverage_change")
+	if n.CoverageChange, err = strconv.ParseFloat(coverageChange, 10); err != nil {
+		cinotify.DoLogf("cinotify/coveralls: Failed to parse coverage_change(%v): %q", err, coverageChange)
+		return nil
+	}
+	coveredPercent := r.PostFormValue("covered_percent")
+	if n.CoveredPercent, err = strconv.ParseFloat(coveredPercent, 10); err != nil {
+		cinotify.DoLogf("cinotify/coveralls: Failed to parse coverage_percent(%v): %q", err, coveredPercent)
 		return nil
 	}
 
 	return n
-}
-
-// Route creates a route that only a coveralls client should hit.
-func (_ coverallsHandler) Route(r *mux.Route) {
-	r.Path("/").Methods("POST").Headers(
-		"Content-Type", "application/x-www-form-urlencoded",
-		"User-Agent", "Ruby",
-	)
 }

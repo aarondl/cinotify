@@ -35,7 +35,7 @@ func main() {
 
 	dr := drone.Notification{
 		RepoSlug:    os.Getenv("DRONE_REPO_SLUG"),
-		BuildUrl:    os.Getenv("DRONE_BUILD_URL"),
+		BuildURL:    os.Getenv("DRONE_BUILD_URL"),
 		BuildDir:    os.Getenv("DRONE_BUILD_DIR"),
 		BuildNumber: os.Getenv("DRONE_BUILD_NUMBER"),
 		Commit:      os.Getenv("DRONE_COMMIT"),

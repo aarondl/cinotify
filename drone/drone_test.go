@@ -6,30 +6,29 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	. "testing"
+	"testing"
 
 	"github.com/aarondl/cinotify"
-	"github.com/gorilla/mux"
 )
 
 var testNotification = Notification{
 	RepoSlug:    "repo_slug",
-	BuildUrl:    "build_url",
+	BuildURL:    "build_url",
 	BuildDir:    "build_dir",
 	BuildNumber: "build_number",
 	Commit:      "commit",
 	Branch:      "branch",
 }
 
-func TestString(t *T) {
+func TestString(t *testing.T) {
 	expect := "Drone[repo_slug]: Job #build_number Initiated at build_url"
 
 	if got := testNotification.String(); got != expect {
-		t.Error("Expected: %s, got: %s", expect, got)
+		t.Errorf("Expected: %s, got: %s", expect, got)
 	}
 }
 
-func TestHandle(t *T) {
+func TestHandle(t *testing.T) {
 	var err error
 	buf := &bytes.Buffer{}
 	encoder := json.NewEncoder(buf)
@@ -37,10 +36,9 @@ func TestHandle(t *T) {
 		t.Error("Failed to jsonify payload: ", err)
 	}
 
-	var req *http.Request
-	if req, err = http.NewRequest("POST", "/", buf); err != nil {
-		t.Error("Error creating mock request: ", err)
-	}
+	req := httptest.NewRequest(http.MethodPost, "/", buf)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "dronenotify")
 
 	d := droneHandler{}
 	note := d.Handle(req)
@@ -55,17 +53,15 @@ func TestHandle(t *T) {
 	}
 }
 
-func TestHandleFail(t *T) {
-	var err error
+func TestHandleFail(t *testing.T) {
 	buf := bytes.NewBufferString("{!$@($*&@&$)(*$)*&@$)")
 	logger := &bytes.Buffer{}
 
 	cinotify.Logger = log.New(logger, "", log.LstdFlags)
 
-	var req *http.Request
-	if req, err = http.NewRequest("POST", "/", buf); err != nil {
-		t.Error("Error creating mock request: ", err)
-	}
+	req := httptest.NewRequest(http.MethodPost, "/", buf)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "dronenotify")
 
 	if 0 != logger.Len() {
 		t.Error("How could something be logged at this point?")
@@ -79,29 +75,5 @@ func TestHandleFail(t *T) {
 
 	if 0 == logger.Len() {
 		t.Error("Expected something to be written to the log.")
-	}
-}
-
-func TestRoute(t *T) {
-	var err error
-
-	d := droneHandler{}
-	router := mux.NewRouter()
-	r := router.NewRoute()
-
-	d.Route(r)
-	r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-
-	resp := httptest.NewRecorder()
-	var req *http.Request
-	if req, err = http.NewRequest("POST", "/", nil); err != nil {
-		t.Error("Error creating mock request: ", err)
-	}
-	req.Header.Add("User-Agent", "dronenotify")
-	req.Header.Add("Content-Type", "application/json")
-
-	router.ServeHTTP(resp, req)
-	if resp.Code != http.StatusOK {
-		t.Error("Route did not match request.")
 	}
 }

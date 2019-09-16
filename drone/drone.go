@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/aarondl/cinotify"
-	"github.com/gorilla/mux"
 )
 
 // Name is the name of the service, for use with When() in cinotify.
@@ -21,7 +20,7 @@ func init() {
 // Notification is the notification transmitted from a dronenotify request.
 type Notification struct {
 	RepoSlug    string `json:"repo_slug"`
-	BuildUrl    string `json:"build_url"`
+	BuildURL    string `json:"build_url"`
 	BuildDir    string `json:"build_dir"`
 	BuildNumber string `json:"build_number"`
 	Commit      string `json:"commit"`
@@ -34,7 +33,7 @@ func (n Notification) String() string {
 		"Drone[%v]: Job #%v Initiated at %v",
 		n.RepoSlug,
 		n.BuildNumber,
-		n.BuildUrl,
+		n.BuildURL,
 	)
 }
 
@@ -43,7 +42,17 @@ type droneHandler struct {
 }
 
 // droneHandler handles any requests from drone.
-func (_ droneHandler) Handle(r *http.Request) fmt.Stringer {
+func (droneHandler) Handle(r *http.Request) fmt.Stringer {
+	if r.URL.Path != "/" || r.Method != http.MethodPost {
+		return nil
+	}
+	if r.Header.Get("Content-Type") != "application/json" {
+		return nil
+	}
+	if r.Header.Get("User-Agent") != "dronenotify" {
+		return nil
+	}
+
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 
@@ -55,12 +64,4 @@ func (_ droneHandler) Handle(r *http.Request) fmt.Stringer {
 	}
 
 	return n
-}
-
-// Route creates a route that only a dronenotify client should hit.
-func (_ droneHandler) Route(r *mux.Route) {
-	r.Path("/").Methods("POST").Headers(
-		"Content-Type", "application/json",
-		"User-Agent", "dronenotify",
-	)
 }

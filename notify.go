@@ -33,45 +33,7 @@ package cinotify
 
 import (
 	"fmt"
-	"net/http"
-	"strconv"
-
-	"github.com/gorilla/mux"
 )
-
-// Handler is capable of handling a webhook from a given service.
-type Handler interface {
-	// Route is called before the webserver starts so we can add criteria
-	// to a route that will be able to uniquely route a request to this
-	// Handler. Try and use additional headers and user agent to differentiate
-	// from other Handlers.
-	//
-	// Make sure you use at least route.Path() in your criteria.
-	Route(*mux.Route)
-
-	// Handle takes a request and transforms it into a fmt.Stringer.
-	Handle(r *http.Request) fmt.Stringer
-}
-
-// handler holds a little bit of meta data about a Handler.
-type handler struct {
-	name        string
-	realHandler Handler
-	notifiers   []Notifier
-	notifyfuncs []NotifyFunc
-}
-
-var handlers = make(map[string]*handler)
-
-// Register registers an extension with cinotify.
-func Register(name string, h Handler) {
-	handlers[name] = &handler{
-		name:        name,
-		realHandler: h,
-		notifiers:   make([]Notifier, 0),
-		notifyfuncs: make([]NotifyFunc, 0),
-	}
-}
 
 // Notifier takes a notification and notifies someone that something happened.
 type Notifier interface {
@@ -86,6 +48,11 @@ type Notifier interface {
 // for Notifier.Notify.
 type NotifyFunc func(name string, notification fmt.Stringer)
 
+// Notify for a NotifyFunc
+func (fn NotifyFunc) Notify(name string, notification fmt.Stringer) {
+	fn(name, notification)
+}
+
 // To is used to direct notifications to a Notifier.
 func To(n Notifier) {
 	for _, h := range handlers {
@@ -93,34 +60,17 @@ func To(n Notifier) {
 	}
 }
 
-// ToFunc is used to direct notifications to a NotifyFunc.
-func ToFunc(n NotifyFunc) {
-	for _, h := range handlers {
-		h.notifyfuncs = append(h.notifyfuncs, n)
-	}
-}
-
-// context is a dumb helper object for a useless fluent syntax I'm creating,
-// see When().
-type context struct {
+// Filter is a dumb helper object for a useless fluent syntax, see When().
+type Filter struct {
 	name string
 }
 
-// To is used to direct notifications from the context's service to a Notifier.
-func (c context) To(n Notifier) {
+// To is used to direct notifications from the filter's named service to a
+// Notifier.
+func (f Filter) To(n Notifier) {
 	for name, h := range handlers {
-		if name == c.name {
+		if name == f.name {
 			h.notifiers = append(h.notifiers, n)
-		}
-	}
-}
-
-// ToFunc is used to direct notifications from the context's service to a
-// NotifyFunc.
-func (c context) ToFunc(n NotifyFunc) {
-	for name, h := range handlers {
-		if name == c.name {
-			h.notifyfuncs = append(h.notifyfuncs, n)
 		}
 	}
 }
@@ -128,28 +78,8 @@ func (c context) ToFunc(n NotifyFunc) {
 // When is a matcher for an extension name, use it in front of a To() call to
 // limit which notifications your Notifier/NotifyFunc will get.
 // Example: When(drone.Name).To(myHandler)
-func When(name string) context {
-	return context{name}
-}
-
-// createRouter takes all the registered handlers and creates proxy anon
-// functions for them, routing all the requests to the correct spot.
-func createRouter() *mux.Router {
-	router := mux.NewRouter()
-
-	for outerName, outerHandler := range handlers {
-		r := router.NewRoute()
-		h := outerHandler // These guys are due to looping + closures
-		name := outerName
-		h.realHandler.Route(r)
-		r.Name(name)
-		r.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			notification := h.realHandler.Handle(r)
-			dispatch(name, notification)
-		})
-	}
-
-	return router
+func When(name string) Filter {
+	return Filter{name}
 }
 
 // dispatch sends the notifications out to all appropriate Notifier and
@@ -159,24 +89,4 @@ func dispatch(name string, notification fmt.Stringer) {
 	for _, notifier := range h.notifiers {
 		notifier.Notify(name, notification)
 	}
-	for _, notifyfunc := range h.notifyfuncs {
-		notifyfunc(name, notification)
-	}
-}
-
-// StartServer starts listening on the given port. Returns a channel that
-// can be listened on for any errors from the web server.
-func StartServer(port uint16) <-chan error {
-	address := ":" + strconv.Itoa(int(port))
-
-	router := createRouter()
-
-	ch := make(chan error, 1)
-	go func() {
-		DoLogf("listening on: [%v]", address)
-		err := http.ListenAndServe(address, router)
-		DoLogf("cinotify: error listening %v", err)
-		ch <- err
-	}()
-	return ch
 }
